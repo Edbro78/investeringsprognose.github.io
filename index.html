@@ -1,0 +1,1201 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Investeringsprognose</title>
+    
+    <!-- Tailwind CSS for styling -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js for the graph -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <style>
+        /* Custom Font Definitions - Bruker må sørge for at disse er lastet inn/tilgjengelige */
+        /* Eksempel på @font-face hvis fonter er selv-hostet.
+           Du må erstatte 'sti/til/' med den faktiske stien til fontfilene dine.
+        @font-face {
+            font-family: 'Whitney Bold';
+            src: url('sti/til/Whitney-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+        }
+        @font-family: 'Whitney Light';
+        src: url('sti/til/Whitney-Light.woff2') format('woff2');
+        font-weight: 300;
+        font-style: normal;
+        }
+        @font-face {
+            font-family: 'Whitney Medium';
+            src: url('sti/til/Whitney-Medium.woff2') format('woff2');
+            font-weight: 500;
+            font-style: normal;
+        }
+        */
+
+        /* CSS Variabler for Fargekoder (Standardisert) */
+        :root {
+            /* Primære Farger basert på den mørke bakgrunnen i bildet */
+            --primary-bg-dark: #1A2A47; /* Den generelle mørke bakgrunnen */
+            --card-bg-dark: #24385B; /* Bakgrunn for kortene i bildet */
+            
+            /* Farger fra bildet for diagrammet */
+            --chart-hovedstol: #4ADE80; /* Grønn for Hovedstol */
+            --chart-avkastning: #93C5FD; /* Lys Blå for Avkastning */
+            --chart-sparing: #3B82F6; /* Mørk Blå for Årlig sparing */
+            --chart-utbetaling: #9CA3AF; /* Grå for Utbetaling pensjonsgap */
+
+            /* Tilpassede farger for UI elementer basert på bildet */
+            --slider-track-color: #364A6E; /* Mørkere spor for sliders */
+            --slider-thumb-color: #60A5FA; /* Lys blå for slider-thumb */
+            --input-border-color: #475569; /* Border for inputfelter */
+            --button-primary-bg: #00A9E0; /* Cyan-lignende for knapper */
+            --button-hover-bg: #008CB8; /* Mørkere cyan for hover */
+
+            /* Spesifikke tekstfarger - REN HVIT OVERALT */
+            --text-heading: #FFFFFF; /* For H1, H2, H3 */
+            --text-general: #FFFFFF; /* Generell tekst, paragrafer, etc. */
+            --text-label: #FFFFFF; /* Alle labels */
+            --text-value-display: #FFFFFF; /* Verdier ved siden av slidere */
+            --text-button-on-blue: #FFFFFF; /* Knappetekst på blå bakgrunn */
+            --text-axis: #FFFFFF; /* Aksetekst (år, MNOK) i grafen */
+            --text-tooltip: #FFFFFF; /* Tekst i tooltips */
+
+            /* Speedometer/Button colors - used for new buttons */
+            --button-default-bg: #002072; /* Dark Blue from primary colors */
+            --button-selected-bg: #00A9E0; /* Cyan-lignende for valgt knapp */
+        }
+
+        /* --- Generelle Stiler --- */
+        body {
+            font-family: 'Whitney Light', sans-serif; /* Standard font for brødtekst */
+            background-color: var(--primary-bg-dark); /* Mørk bakgrunn fra bildet */
+            color: var(--text-general);
+            display: flex;
+            justify-content: center;
+            align-items: flex-start; /* Justert for å unngå vertikal rulling ved for mye innhold */
+            min-height: 100vh; /* Sikrer at siden fyller hele viewport høyden */
+            margin: 0;
+            overflow: hidden; /* Forhindrer rulling */
+            padding: 2rem; /* Polstring rundt hovedinnholdet */
+            box-sizing: border-box; /* Inkluder polstring i elementets totalbredde/høyde */
+        }
+
+        /* Font Stiler basert på spesifikasjoner */
+        h1 {
+            font-family: 'Whitney Bold', sans-serif;
+            font-size: 60pt;
+            color: var(--text-heading);
+            line-height: 1.1;
+        }
+        h2 {
+            font-family: 'Whitney Bold', sans-serif;
+            font-size: 30pt;
+            color: var(--text-heading);
+        }
+        h3 {
+            font-family: 'Whitney Bold', sans-serif;
+            font-size: 16pt; /* Samme som paragrafstørrelse */
+            color: var(--text-heading);
+        }
+        p {
+            font-family: 'Whitney Light', sans-serif;
+            font-size: 16pt;
+            color: var(--text-general);
+        }
+        label {
+            font-family: 'Whitney Medium', sans-serif;
+            font-size: 15pt;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--text-label);
+        }
+        .quote { /* Ikke brukt i layouten, men definert for fullstendighet */
+            font-family: 'Whitney Medium', sans-serif;
+            font-size: 30pt;
+            font-style: italic;
+        }
+
+        /* Overstyrer standard styling for input og knapper for å matche fonten */
+        input, button, select, textarea {
+            font-family: 'Whitney Light', sans-serif;
+            color: var(--text-general);
+        }
+
+        /* Responsiv fontstørrelse for mindre skjermer */
+        @media (max-width: 1280px) { /* Tilpasning for bærbare skjermer */
+            h1 { font-size: 48pt; }
+            h2 { font-size: 24pt; }
+            p, h3 { font-size: 14pt; }
+            label { font-size: 12pt; }
+            .quote { font-size: 24pt; }
+        }
+        @media (max-width: 768px) { /* Tilpasning for nettbrett/mobil */
+            h1 { font-size: 36pt; }
+            h2 { font-size: 20pt; }
+            p, h3 { font-size: 12pt; }
+            label { font-size: 10pt; }
+            .quote { font-size: 20pt; }
+        }
+
+        /* Hovedbeholder for dashboardet */
+        .dashboard-container {
+            border-radius: 1rem;
+            padding: 0; /* Fjern padding her da kortene har egen padding */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 1840px; /* ØKT MED 20% FRA 1536PX for å fylle skjermen mer */
+            height: 100%;
+            max-height: 800px; /* Effektiv oppløsningshøyde */
+            display: flex;
+            flex-direction: column;
+            gap: 1.5rem;
+            box-sizing: border-box;
+        }
+
+        /* Bakgrunn for kort-lignende seksjoner */
+        .card-bg {
+            background-color: var(--card-bg-dark); /* Kortbakgrunn fra bildet */
+            border-radius: 0.75rem; /* Avrundede hjørner */
+            padding: 1.5rem;
+            color: var(--text-general);
+        }
+        .card-bg h1, .card-bg h2, .card-bg h3 {
+            color: var(--text-heading);
+        }
+        .card-bg label {
+            color: var(--text-label);
+            font-size: 10pt; /* Mindre størrelse for labels for bedre passform */
+        }
+        .card-bg .value-display {
+            color: var(--text-value-display); /* Farge på verdier ved siden av sliders */
+            font-family: 'Whitney Medium', sans-serif;
+            font-size: 1rem;
+        }
+
+        /* Stylinger for range inputs (sliders) */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 100%;
+            height: 8px;
+            border-radius: 5px;
+            outline: none;
+            transition: background 0.3s, opacity 0.2s;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            background: var(--slider-thumb-color); /* Lys blå farge for glider */
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid var(--card-bg-dark); /* Kantfarge for glider */
+        }
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            background: var(--slider-thumb-color);
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid var(--card-bg-dark);
+        }
+        /* Sliders inside card-bg */
+        .card-bg input[type="range"] {
+            background: var(--slider-track-color); /* Mørkere spor for sliders */
+        }
+
+        /* Spesifikk styling for årlig aksjeandel inputs (sliders) - DISSE ER NÅ FJERNES FRA UI */
+        #annual-stock-percentage-inputs {
+            display: none; /* Skjuler hele seksjonen med individuelle aksjeandel-slidere */
+        }
+
+        /* Diagram spesifikk styling */
+        canvas {
+            background-color: var(--primary-bg-dark); /* Mørk bakgrunn for diagrammet som i bildet */
+            border-radius: 0.75rem;
+            flex-grow: 1; /* Lats diagrammet fylle tilgjengelig plass */
+            max-height: 50vh; /* Begrenser høyden for å unngå rulling */
+        }
+
+        /* Overstyrer Chart.js tooltips for å matche temaet */
+        .chartjs-tooltip {
+            background-color: var(--card-bg-dark) !important;
+            color: var(--text-tooltip) !important; /* Matcher bildet */
+            border-radius: 0.5rem !important;
+            padding: 12px !important;
+            font-family: 'Whitney Light', sans-serif !important;
+        }
+        .chartjs-tooltip-header {
+            font-family: 'Whitney Medium', sans-serif !important;
+            color: var(--text-tooltip) !important; /* Matcher bildet */
+            padding-bottom: 5px !important;
+        }
+        .chartjs-tooltip-body {
+            font-size: 14px !important;
+        }
+
+        /* Legend styling */
+        #legend-container span {
+            color: var(--text-general); /* Hvit tekst for legend på mørk bakgrunn, matcher bildet */
+            font-family: 'Whitney Light', sans-serif;
+            font-size: 16pt; /* Match paragraph size */
+        }
+        #legend-container .w-4.h-4 {
+            border-radius: 0.25rem; /* Små avrundede firkanter for legend fargeindikator */
+        }
+        /* Chart.js Y-axis labels styling (og X-akse) */
+        .chartjs-render-monitor text {
+            fill: #FFFFFF !important; /* Sett til ren hvit for akser og årstall */
+            color: #FFFFFF !important; /* Fallback for eldre nettlesere/eksplisitt override */
+        }
+
+        /* Sikrer responsivitet for hovedoppsettet */
+        .grid-container {
+            display: grid;
+            grid-template-columns: 1fr; /* Standard: en kolonne */
+            gap: 1.5rem;
+            flex-grow: 1; /* Takes up available vertical space */
+        }
+        @media (min-width: 1280px) { /* At 1280px width (xl breakpoint for Tailwind) */
+            .grid-container {
+                grid-template-columns: 1fr 1fr; /* Two columns on larger screens */
+            }
+        }
+        /* Styling for Legg til hendelse button */
+        .add-event-button {
+            background-color: var(--button-primary-bg); /* Blue from image */
+            color: var(--text-button-on-blue); /* Button text color, matches image */
+            font-family: 'Whitney Medium', sans-serif;
+            padding: 0.75rem 1.25rem;
+            border-radius: 0.5rem;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+            transition: background-color 0.2s ease-in-out;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .add-event-button:hover {
+            background-color: var(--button-hover-bg); /* Darker blue on hover */
+        }
+        /* Styling for remove event button */
+        .remove-event-button {
+            color: var(--text-light-blue); /* Light blue for delete icon */
+            transition: color 0.2s ease-in-out;
+        }
+        .remove-event-button:hover {
+            color: #ef4444; /* Red on hover */
+        }
+
+        /* Event Row Styling */
+        .event-row {
+            background-color: rgba(0,0,0,0.2); /* Darker background for event rows */
+            border: 1px solid var(--input-border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: var(--text-general);
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 0.75rem;
+            align-items: center;
+        }
+        .event-row input[type="text"], .event-row input[type="number"] {
+            background-color: rgba(0,0,0,0.4);
+            border: 1px solid var(--input-border-color);
+            padding: 0.4rem 0.6rem;
+            border-radius: 0.4rem;
+        }
+        .event-row label {
+            font-size: 0.8rem;
+            color: var(--text-label);
+        }
+        /* Adjusted positioning for range slider labels (start/end year) */
+        .event-range-slider-labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 0.75rem;
+            /* Adjusted margin-top to push labels further down relative to slider */
+            margin-top: 1rem; /* Reduced from 1.5rem to 1rem based on visual check */
+            color: var(--text-general); /* Explicitly white for these labels */
+        }
+
+        .event-range-slider-container {
+            position: relative;
+            /* Reduced height to reduce overall vertical space, ensuring labels still fit */
+            height: 35px; /* Reduced from 40px to 35px */
+        }
+
+        .event-range-slider-start,
+        .event-range-slider-end {
+            height: 5px; /* Visual track height */
+            background: transparent; /* Make default track transparent to use custom highlight */
+            position: absolute;
+            width: 100%;
+            pointer-events: auto; /* Ensure sliders are interactive */
+            top: 5px; /* Adjusted top to position track correctly within new height */
+            margin: 0; /* Remove default margins */
+        }
+
+        /* Custom track style */
+        .event-range-track {
+            position: absolute;
+            top: 5px; /* Match slider top position */
+            transform: translateY(0); /* Remove transform as top is absolute */
+            width: 100%;
+            height: 4px;
+            background-color: var(--slider-track-color);
+            border-radius: 2px;
+            pointer-events: none; /* Make track non-interactive, only thumbs */
+        }
+        .event-range-highlight {
+            position: absolute;
+            top: 5px; /* Match slider top position */
+            transform: translateY(0); /* Remove transform */
+            height: 4px;
+            background-color: var(--slider-thumb-color);
+            border-radius: 2px;
+            pointer-events: none;
+        }
+
+        .event-range-slider-start::-webkit-slider-thumb,
+        .event-range-slider-end::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            background: var(--slider-thumb-color);
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid var(--card-bg-dark);
+            margin-top: -6px; /* Adjust thumb position to align with track */
+        }
+        .event-range-slider-start::-moz-range-thumb,
+        .event-range-slider-end::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            background: var(--slider-thumb-color);
+            cursor: pointer;
+            border-radius: 50%;
+            border: 2px solid var(--card-bg-dark);
+            margin-top: -6px; /* Adjust thumb position to align with track */
+        }
+
+
+        /* Checkbox styling */
+        .checkbox-container {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .checkbox-container input[type="checkbox"] {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 1.25rem;
+            height: 1.25rem;
+            border: 2px solid var(--slider-track-color);
+            border-radius: 0.25rem;
+            background-color: rgba(0,0,0,0.3);
+            cursor: pointer;
+            position: relative;
+            outline: none;
+        }
+
+        .checkbox-container input[type="checkbox"]:checked {
+            background-color: var(--button-primary-bg); /* Filled when checked */
+            border-color: var(--button-primary-bg);
+        }
+
+        .checkbox-container input[type="checkbox"]:checked::before {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            width: 0.5rem;
+            height: 0.8rem;
+            border-right: 2px solid var(--text-button-on-blue); /* Matcher knappetekstfarge */
+            border-bottom: 2px solid var(--text-button-on-blue); /* Matcher knappetekstfarge */
+            transform: translate(-50%, -50%) rotate(45deg);
+        }
+        .checkbox-container label {
+            margin-bottom: 0; /* Remove default margin for label */
+            color: var(--text-label);
+        }
+        /* Speedometer specific styles */
+        .speedometer-container {
+            width: 100%;
+            max-width: 200px; /* Fixed width for the speedometer container */
+            margin: 1rem auto;
+            position: relative;
+            padding-top: 10px; /* Space for the top dial */
+            height: 120px; /* Fixed height based on SVG viewBox */
+            overflow: hidden; /* Hide overflow from dial */
+        }
+        .speedometer-svg {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            left: 0;
+            top: 0;
+            pointer-events: none; /* Make SVG itself non-interactive for general mouse events */
+            overflow: visible; /* Allow needle to go beyond viewBox if needed */
+        }
+        .speedometer-interactive-area {
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            cursor: grab;
+            z-index: 10; /* Ensure it's above the SVG for interaction */
+            pointer-events: auto; /* Make this div interactive */
+        }
+        .speedometer-svg #speedometer-needle {
+            transform-origin: 100px 100px; /* Center of rotation for the needle */
+            transition: transform 0.05s linear; /* Smooth needle movement */
+            stroke: var(--speedometer-needle-color);
+            stroke-width: 4; /* Thicker needle */
+            stroke-linecap: round;
+        }
+        .speedometer-svg #speedometer-dial-arc { /* The main white dial outline */
+            fill: none; 
+            stroke: var(--speedometer-dial-bg); 
+            stroke-width: 20; /* Thickness of the dial arc */
+            stroke-linecap: round;
+        }
+        .speedometer-svg .tick-line {
+            stroke: var(--speedometer-tick-color);
+            stroke-width: 1;
+            stroke-linecap: round;
+        }
+        .speedometer-svg .tick-label {
+            fill: var(--speedometer-text-color);
+            font-family: sans-serif; /* Standard font for numbers on dial */
+            font-size: 12px;
+            text-anchor: middle;
+            dominant-baseline: central;
+        }
+        .speedometer-svg #speedometer-center-dot {
+            fill: var(--speedometer-center-dot);
+        }
+
+        .speedometer-value-display {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            font-family: 'Whitney Medium', sans-serif;
+            font-size: 1.25rem;
+            color: var(--text-value-display);
+            z-index: 5;
+            pointer-events: none; /* Do not interfere with mouse events */
+        }
+        /* Icon styling within speedometer segments - removed as per new design */
+        .speedometer-svg .icon-text {
+            display: none; /* Hide icons as per new design */
+        }
+
+        /* Button styles for stock allocation */
+        .stock-allocation-button-group {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr)); /* Responsive columns */
+            gap: 0.5rem; /* Gap between buttons */
+            width: 100%;
+        }
+
+        .stock-allocation-button {
+            aspect-ratio: 1 / 1; /* Make buttons square */
+            background-color: var(--button-default-bg);
+            color: var(--text-button-on-blue);
+            font-family: 'Whitney Medium', sans-serif;
+            font-size: 0.9rem; /* Adjust font size to fit */
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out, transform 0.1s ease-in-out;
+            padding: 0.25rem; /* Small padding */
+        }
+
+        .stock-allocation-button:hover {
+            background-color: var(--button-hover-bg);
+            transform: translateY(-2px);
+        }
+
+        .stock-allocation-button.selected {
+            background-color: var(--button-selected-bg);
+            box-shadow: 0 0 8px var(--button-selected-bg); /* Highlight selected button */
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <!-- Hovedbeholder for dashboardet -->
+    <div class="dashboard-container">
+        <!-- Hovedinnhold: Graf -->
+        <main class="w-full card-bg flex flex-col flex-grow">
+            <div class="flex justify-between items-center mb-4">
+                <h1 style="color: var(--text-heading); font-size: 40pt;" class="text-center w-full">Investeringsprognose</h1>
+            </div>
+
+            <div class="flex-grow relative" style="height: 400px;"> <!-- Fixed height for diagram -->
+                <canvas id="investmentChart"></canvas>
+            </div>
+            <!-- Legend for diagrammet -->
+            <div id="legend-container" class="flex justify-center flex-wrap gap-x-6 gap-y-2 mt-4" style="color: var(--text-general);"></div>
+        </main>
+
+        <!-- Bunnseksjon: Kontroller og Hendelser -->
+        <div class="w-full grid-container">
+            <!-- Venstre Panel: Forutsetninger -->
+            <aside class="w-full card-bg">
+                <h2 style="font-size: 20pt; color: var(--text-heading);" class="mb-6">Forutsetninger</h2>
+                <div class="space-y-6">
+                    <div>
+                        <label for="initialPortfolioSize">Porteføljestørrelse (NOK)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="initialPortfolioSize" min="2500000" max="100000000" step="500000" value="10000000" class="w-full mt-1">
+                            <span class="value-display" id="initialPortfolioSizeValue"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="investedCapital">Innskutt kapital (skattefri) (NOK)</label>
+                         <div class="flex items-center gap-2">
+                            <input type="range" id="investedCapital" min="0" max="50000000" step="100000" value="5000000" class="w-full mt-1">
+                            <span class="value-display" id="investedCapitalValue"></span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="investmentYears">Antall år investeringsperiode (<span id="investmentYearsLabel">10</span>)</label>
+                        <input type="range" id="investmentYears" min="1" max="30" value="10" class="w-full mt-1">
+                    </div>
+                    <div>
+                        <label for="payoutYears">Antall år med utbetaling (<span id="payoutYearsLabel">10</span>)</label>
+                        <input type="range" id="payoutYears" min="0" max="30" value="10" class="w-full mt-1">
+                    </div>
+                    <div>
+                        <label for="desiredAnnualPayoutAfterTax">Ønsket årlig utbetaling (etter skatt) (NOK)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="desiredAnnualPayoutAfterTax" min="0" max="3000000" step="50000" value="1000000" class="w-full mt-1">
+                            <span class="value-display" id="desiredAnnualPayoutAfterTaxValue"></span>
+                        </div>
+                    </div>
+                    <div class="checkbox-container">
+                        <input type="checkbox" id="taperStockAllocation">
+                        <label for="taperStockAllocation" style="font-size: 1rem;">Aksjeandel nedtrapping (5% per år)</label>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Høyre Panel: Hendelser -->
+            <footer class="w-full card-bg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 style="font-size: 20pt; color: var(--text-heading);">Hendelser</h2>
+                    <button id="add-event-btn" class="add-event-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                        <span>Legg til hendelse</span>
+                    </button>
+                </div>
+                <div class="space-y-6">
+                    <div>
+                        <label>Aksjeandel første år (%)</label>
+                        <div class="stock-allocation-button-group">
+                            <button class="stock-allocation-button" data-value="0">100% Renter</button>
+                            <button class="stock-allocation-button" data-value="20">20% Aksjer</button>
+                            <button class="stock-allocation-button" data-value="45">45% Aksjer</button>
+                            <button class="stock-allocation-button" data-value="55">55% Aksjer</button>
+                            <button class="stock-allocation-button" data-value="65">65% Aksjer</button>
+                            <button class="stock-allocation-button" data-value="85">85% Aksjer</button>
+                            <button class="stock-allocation-button" data-value="100">100% Aksjer</button>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <label for="stockReturnRate">Forventet avkastning aksjer</label>
+                        <div class="flex items-center gap-2 w-28">
+                            <input type="range" id="stockReturnRate" value="8.0" min="5" max="10" step="0.1" class="w-full text-right px-2 py-1 bg-transparent border rounded-md">
+                            <span class="value-display" id="stockReturnRateValue">%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <label for="bondReturnRate">Forventet avkastning renter</label>
+                        <div class="flex items-center gap-2 w-28">
+                            <input type="range" id="bondReturnRate" value="5.0" min="4" max="8" step="0.1" class="w-full text-right px-2 py-1 bg-transparent border rounded-md">
+                            <span class="value-display" id="bondReturnRateValue">%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <label for="taxRate">Skattesats på uttak (etter innskutt kapital)</label>
+                        <div class="flex items-center gap-2 w-28">
+                            <!-- Changed to disabled number input as requested -->
+                            <input type="number" id="taxRate" value="37.8" step="0.1" disabled class="w-full text-right px-2 py-1 bg-transparent border rounded-md opacity-50 cursor-not-allowed">
+                            <span class="value-display" id="taxRateValue">%</span>
+                        </div>
+                    </div>
+                    <div>
+                        <label for="annualSavings">Årlig sparing (NOK)</label>
+                        <div class="flex items-center gap-2">
+                            <input type="range" id="annualSavings" min="0" max="1000000" step="10000" value="0" class="w-full mt-1">
+                            <span class="value-display" id="annualSavingsValue"></span>
+                        </div>
+                    </div>
+                    <div id="events-container" class="space-y-3">
+                        <!-- Event rows will be dynamically inserted here -->
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', function() {
+
+        const App = {
+            // Definerer startåret for simuleringen
+            START_YEAR: new Date().getFullYear(),
+            
+            // Applikasjonens tilstand, med standardverdier
+            state: {
+                initialPortfolioSize: 10000000, // Start porteføljestørrelse
+                investedCapital: 5000000,    // Innskutt kapital (skattefri)
+                investmentYears: 10,         // Antall år med investering
+                payoutYears: 10,             // Antall år med utbetaling
+                desiredAnnualPayoutAfterTax: 1000000, // Ønsket årlig utbetaling etter skatt
+                initialStockAllocation: 80,  // NY: Aksjeandel første år (%)
+                stockReturnRate: 8.0,        // Forventet avkastning for aksjer (%)
+                bondReturnRate: 5.0,         // Forventet avkastning for renter (%)
+                taxRate: 37.8,               // Skattesats (%)
+                annualStockPercentages: [],  // Array for årlig aksjeandel (beregnes internt)
+                annualSavings: 0,            // NY: Årlig sparing
+                events: [],                  // Hendelser (engangsinnskudd/uttak)
+                taperStockAllocation: false, // Nytt felt for nedtrapping
+            },
+            
+            // Fargepalett for diagrammet, matcher bildet
+            colors: {
+                hovedstol: '#4ADE80', /* Grønn for Hovedstol */
+                avkastning: '#93C5FD', /* Lys Blå for Avkastning */
+                sparing: '#3B82F6', /* Mørk Blå for Årlig sparing */
+                utbetaling: '#9CA3AF', /* Grå for Årlige utbetalinger (tidligere utbetaling pensjonsgap) */
+            },
+            
+            // Data for diagramlegenden, matcher bildet
+            legendData: [
+                { label: 'Hovedstol', color: '#4ADE80' },
+                { label: 'Avkastning', color: '#93C5FD' },
+                { label: 'Årlig sparing', color: '#3B82F6' },
+                { label: 'Årlige utbetalinger', color: '#9CA3AF' }, // ENDRET TEKST HER
+            ],
+            
+            // Referanser til DOM-elementer
+            elements: {},
+            
+            // Chart.js instans
+            investmentChart: null,
+
+            // Funksjon for å formatere verdier som vises ved siden av slidere
+            formatDisplayValue: function(id, value) {
+                switch(id) {
+                    case 'initialPortfolioSize':
+                    case 'investedCapital':
+                    case 'desiredAnnualPayoutAfterTax':
+                    case 'annualSavings':
+                        return this.formatCurrency(value);
+                    case 'initialStockAllocation':
+                        return `${value.toFixed(0)}%`; // Heltall for prosent
+                    case 'stockReturnRate':
+                    case 'bondReturnRate':
+                    case 'taxRate':
+                        return `${value.toFixed(value % 1 === 0 ? 0 : 1)}%`; // Viser 1 desimal for float, 0 for heltall
+                    case 'investmentYears':
+                    case 'payoutYears':
+                        return `${value} år`;
+                    default:
+                        return value;
+                }
+            },
+
+            // Initialiserer applikasjonen
+            init: function() {
+                // Henter referanser til alle nødvendige DOM-elementer
+                this.elements = {
+                    initialPortfolioSize: document.getElementById('initialPortfolioSize'),
+                    initialPortfolioSizeValue: document.getElementById('initialPortfolioSizeValue'), // For display
+                    investedCapital: document.getElementById('investedCapital'),
+                    investedCapitalValue: document.getElementById('investedCapitalValue'), // For display
+                    investmentYears: document.getElementById('investmentYears'),
+                    investmentYearsLabel: document.getElementById('investmentYearsLabel'),
+                    payoutYears: document.getElementById('payoutYears'),
+                    payoutYearsLabel: document.getElementById('payoutYearsLabel'),
+                    desiredAnnualPayoutAfterTax: document.getElementById('desiredAnnualPayoutAfterTax'),
+                    desiredAnnualPayoutAfterTaxValue: document.getElementById('desiredAnnualPayoutAfterTaxValue'), // For display
+                    // initialStockAllocation is now handled by buttons
+                    stockReturnRate: document.getElementById('stockReturnRate'),
+                    stockReturnRateValue: document.getElementById('stockReturnRateValue'), // For display
+                    bondReturnRate: document.getElementById('bondReturnRate'),
+                    bondReturnRateValue: document.getElementById('bondReturnRateValue'), // For display
+                    taxRate: document.getElementById('taxRate'),
+                    taxRateValue: document.getElementById('taxRateValue'), // For display
+                    legendContainer: document.getElementById('legend-container'),
+                    annualSavings: document.getElementById('annualSavings'), // ÅRLIG SPARING
+                    annualSavingsValue: document.getElementById('annualSavingsValue'), // For display
+                    addEventBtn: document.getElementById('add-event-btn'),
+                    eventsContainer: document.getElementById('events-container'),
+                    taperStockAllocation: document.getElementById('taperStockAllocation'),
+                    
+                    stockAllocationButtons: document.querySelectorAll('.stock-allocation-button') // Get all buttons
+                };
+
+                // Setter opp Chart.js diagrammet
+                const ctx = document.getElementById('investmentChart').getContext('2d');
+                this.investmentChart = new Chart(ctx, {
+                    type: 'bar', // Nå en stablet stolpediagram
+                    data: {
+                        labels: [],
+                        datasets: []
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            x: {
+                                stacked: true, // Viktig for stablede stolper
+                                grid: { display: false },
+                                ticks: {
+                                    color: '#FFFFFF', /* REN HVIT FOR X-AKSE TICKS */
+                                    font: {
+                                        size: 12,
+                                        family: 'Whitney Light, sans-serif',
+                                        weight: 'normal'
+                                    }
+                                },
+                                barPercentage: 0.9,
+                                categoryPercentage: 0.8,
+                            },
+                            y: {
+                                stacked: true, // Viktig for stablede stolper
+                                beginAtZero: false,
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' }, /* Lysere rutenett for mørk bakgrunn */
+                                ticks: {
+                                    color: '#FFFFFF' , /* REN HVIT FOR Y-AKSE TICKS */
+                                    font: {
+                                        size: 12,
+                                        family: 'Whitney Light, sans-serif',
+                                        weight: 'normal'
+                                    },
+                                    callback: (value) => {
+                                        // For large values, show MNOK
+                                        if (Math.abs(value) >= 1000000) {
+                                            return (value / 1000000).toLocaleString('no-NO', { minimumFractionDigits: 0, maximumFractionDigits: 1 }) + ' MNOK';
+                                        }
+                                        // For values between 1,000 and 999,999, show KNOK
+                                        if (Math.abs(value) >= 1000) {
+                                            return (value / 1000).toLocaleString('no-NO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }) + ' KNOK';
+                                        }
+                                        // For smaller values, show raw number
+                                        return value.toLocaleString('no-NO', { minimumFractionDigits: 0 });
+                                    }
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: { display: false }, // Skjuler Chart.js sin egen legend
+                            tooltip: {
+                                enabled: true,
+                                mode: 'index',
+                                intersect: false,
+                                // Farger og fonter for tooltips håndteres av CSS over
+                                callbacks: {
+                                    title: (tooltipItems) => `År ${tooltipItems[0].label}`,
+                                    label: (context) => {
+                                        const label = context.dataset.label || '';
+                                        let value = context.raw;
+                                        if (value < 0) value = Math.abs(value); // Vis positiv verdi i tooltip for uttak
+                                        return `${label}: ${value.toLocaleString('no-NO', { style: 'currency', currency: 'NOK', minimumFractionDigits: 0 })}`;
+                                    }
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        }
+                    }
+                });
+                
+                // Legger til event listeners for alle inputfelt (slidere)
+                const sliderInputs = [
+                    this.elements.initialPortfolioSize, this.elements.investedCapital, 
+                    this.elements.investmentYears, this.elements.payoutYears, 
+                    this.elements.desiredAnnualPayoutAfterTax, 
+                    this.elements.stockReturnRate, this.elements.bondReturnRate, 
+                    this.elements.annualSavings 
+                ];
+
+                sliderInputs.forEach(input => {
+                    input.addEventListener('input', this.handleSliderChange.bind(this));
+                });
+
+                // Hendelser for aksjeandel-knappene
+                this.elements.stockAllocationButtons.forEach(button => {
+                    button.addEventListener('click', (e) => {
+                        const value = parseInt(e.target.dataset.value, 10);
+                        this.state.initialStockAllocation = value;
+                        this.updateUI(); // Oppdater UI og graf
+                    });
+                });
+
+                // Hendelser for "Legg til hendelse" og ny checkbox
+                this.elements.addEventBtn.addEventListener('click', this.addEvent.bind(this));
+                this.elements.taperStockAllocation.addEventListener('change', (e) => {
+                    this.state.taperStockAllocation = e.target.checked;
+                    this.updateUI(); // Oppdater UI når nedtrapping endres
+                });
+
+                // Initialiserer legend og oppdaterer UI
+                this.createLegend();
+                this.populateAnnualStockPercentages(); // Populerer aksjeandel arrayet
+                this.updateUI(); // Utfører første beregning og tegner diagram
+            },
+
+            // Håndterer endringer for slider-inputs
+            handleSliderChange: function(event) {
+                const { id, value } = event.target;
+                const parsedValue = parseFloat(value);
+                this.state[id] = parsedValue;
+
+                // Oppdaterer visnings-span for slideren
+                if (this.elements[`${id}Label`]) { // For investmentYears, payoutYears
+                    this.elements[`${id}Label`].textContent = this.formatDisplayValue(id, parsedValue);
+                } else if (this.elements[`${id}Value`]) { // For alle andre nye slidere
+                    this.elements[`${id}Value`].textContent = this.formatDisplayValue(id, parsedValue);
+                }
+                
+                // Trigger en full UI-oppdatering
+                this.updateUI();
+            },
+
+            // Formaterer tall til norsk valutaformat
+            formatCurrency: (value) => new Intl.NumberFormat('nb-NO', { style: 'currency', currency: 'NOK', minimumFractionDigits: 0, maximumFractionDigits: 0 }).format(value),
+            // Formaterer tall med tusenskilletegn
+            formatNumber: (value) => new Intl.NumberFormat('nb-NO').format(value),
+            
+            // Dynamisk populering av årlig aksjeandel-array
+            populateAnnualStockPercentages: function() {
+                // Beregner totalt antall år i simuleringen (investering + utbetaling)
+                const totalSimulatedYears = this.state.investmentYears + this.state.payoutYears;
+
+                // Tilbakestill arrayet for å sikre nøyaktig repopulering basert på nye inputs
+                this.state.annualStockPercentages = [];
+
+                for (let index = 0; index < totalSimulatedYears; index++) {
+                    const isInvestmentYear = index < this.state.investmentYears; 
+                    const isPayoutYear = index >= this.state.investmentYears;
+
+                    let currentPercentage = 0; // Standard startverdi
+
+                    if (isInvestmentYear) {
+                        // For investeringsår, bruk "Aksjeandel første år"
+                        currentPercentage = this.state.initialStockAllocation;
+                    } else if (isPayoutYear) {
+                        // For utbetalingsår
+                        if (this.state.taperStockAllocation) {
+                            // Hvis nedtrapping er aktivert
+                            // Baseprosent for nedtrapping er aksjeandelen i siste investeringsår,
+                            // eller "Aksjeandel første år" hvis investeringsperioden er 0
+                            const basePercentageForTapering = (this.state.investmentYears > 0) 
+                                ? this.state.annualStockPercentages[this.state.investmentYears - 1] 
+                                : this.state.initialStockAllocation;
+
+                            // Reduser med 5% for hvert år i utbetalingsperioden (startende fra 0. år av utbetaling)
+                            const payoutYearIndex = index - this.state.investmentYears;
+                            const reduction = payoutYearIndex * 5;
+                            currentPercentage = Math.max(0, basePercentageForTapering - reduction);
+                        } else {
+                            // Hvis nedtrapping IKKE er aktivert, viderefør "Aksjeandel første år"
+                            currentPercentage = this.state.initialStockAllocation;
+                        }
+                    }
+                    this.state.annualStockPercentages.push(currentPercentage);
+                }
+            },
+
+            // Legg til hendelse funksjon fra original kode
+            addEvent: function() {
+                const eventId = `event-${Date.now()}`;
+                const totalYears = this.state.investmentYears + this.state.payoutYears;
+                const maxYear = this.START_YEAR + totalYears - 1;
+                const defaultStartYear = Math.min(maxYear, this.START_YEAR + 5);
+                const newEvent = { id: eventId, type: 'Uttak', belop: -100000, startAar: defaultStartYear, sluttAar: defaultStartYear };
+                this.state.events.push(newEvent);
+
+                const eventRow = document.createElement('div');
+                eventRow.id = eventId;
+                eventRow.className = 'event-row'; /* Bruker Tailwind for grid layout */
+                eventRow.innerHTML = `
+                    <div class="col-span-3">
+                        <input type="text" value="Uttak" data-key="type" class="w-full px-3 py-2" placeholder="Navn på hendelse">
+                    </div>
+                    <div class="col-span-5 event-range-slider-container">
+                        <div class="event-range-track"></div>
+                        <div class="event-range-highlight"></div>
+                        <input type="range" data-key="startAar" min="${this.START_YEAR}" max="${maxYear}" value="${newEvent.startAar}" class="event-range-slider-start">
+                        <input type="range" data-key="sluttAar" min="${this.START_YEAR}" max="${maxYear}" value="${newEvent.sluttAar}" class="event-range-slider-end">
+                        <div class="event-range-slider-labels">
+                            <span class="start-year-label">${newEvent.startAar}</span>
+                            <span class="end-year-label">${newEvent.sluttAar}</span>
+                        </div>
+                    </div>
+                    <div class="col-span-3">
+                        <input type="text" data-key="belop" value="${newEvent.belop}" inputmode="numeric" class="w-full px-3 py-2" placeholder="Beløp">
+                    </div>
+                    <div class="col-span-1 text-right">
+                        <button class="remove-event-button">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        </button>
+                    </div>`;
+                this.elements.eventsContainer.appendChild(eventRow);
+                
+                // Ensure number inputs are formatted on blur AND update on input
+                const amountInput = eventRow.querySelector('input[data-key="belop"]');
+                amountInput.value = newEvent.belop.toLocaleString('nb-NO'); // Initial formatting
+                amountInput.addEventListener('input', (e) => { // Use 'input' to update state immediately and also reformat display
+                    let rawValue = e.target.value.replace(/\s/g, '').replace(/,/g, '.');
+                    let parsedValue = parseFloat(rawValue);
+                    
+                    // Allow negative sign to be typed
+                    if (e.target.value === '-') {
+                        newEvent.belop = -0; // Store as negative zero for calculation if just '-'
+                        e.target.value = '-'; // Keep '-' in display
+                        this.updateUI(); // Update graph based on negative zero
+                        return;
+                    }
+                    
+                    if (isNaN(parsedValue)) {
+                        parsedValue = 0;
+                    }
+                    newEvent.belop = parsedValue; // Update the event object in state
+                    e.target.value = parsedValue.toLocaleString('nb-NO'); // Update the input field's display value
+                    this.updateUI(); // Re-render graph based on new event amount
+                });
+                amountInput.addEventListener('blur', (e) => { // Format on blur (redundant if input handles it, but good fallback)
+                    let value = parseFloat(e.target.value.replace(/\s/g, '').replace(/,/g, '.'));
+                    if (!isNaN(value)) { e.target.value = value.toLocaleString('nb-NO'); } else { e.target.value = '0'; }
+                });
+
+
+                const updateRangeHighlight = () => {
+                    const startSlider = eventRow.querySelector('.event-range-slider-start');
+                    const endSlider = eventRow.querySelector('.event-range-slider-end');
+                    const highlight = eventRow.querySelector('.event-range-highlight');
+                    const min = parseInt(startSlider.min, 10); const max = parseInt(startSlider.max, 10);
+                    const range = max - min;
+                    if (range === 0) { highlight.style.width = '0%'; return; };
+                    const left = (parseInt(startSlider.value, 10) - min) / range * 100;
+                    const width = (parseInt(endSlider.value, 10) - parseInt(startSlider.value, 10)) / range * 100;
+                    highlight.style.left = `${left}%`;
+                    highlight.style.width = `${Math.max(0, width)}%`;
+                };
+
+                eventRow.addEventListener('input', (e) => {
+                    const event = this.state.events.find(ev => ev.id === eventId);
+                    const key = e.target.dataset.key;
+                    // Skip belop as it has its own listener
+                    if (key === 'belop') return; 
+
+                    let value = e.target.type === 'number' || e.target.type === 'range' ? parseFloat(e.target.value) : e.target.value;
+                    
+                    event[key] = value;
+                    if (key === 'startAar' || key === 'sluttAar') {
+                        const startSlider = eventRow.querySelector('.event-range-slider-start');
+                        const endSlider = eventRow.querySelector('.event-range-slider-end');
+                        if (parseFloat(startSlider.value) > parseFloat(endSlider.value)) {
+                            if (key === 'startAar') endSlider.value = startSlider.value; else startSlider.value = endSlider.value;
+                        }
+                        event.startAar = parseFloat(startSlider.value);
+                        event.sluttAar = parseFloat(endSlider.value);
+                        eventRow.querySelector('.start-year-label').textContent = event.startAar;
+                        eventRow.querySelector('.end-year-label').textContent = event.sluttAar;
+                        updateRangeHighlight();
+                    }
+                    this.updateUI();
+                });
+
+                eventRow.querySelector('.remove-event-button').addEventListener('click', () => {
+                    this.state.events = this.state.events.filter(ev => ev.id !== eventId);
+                    eventRow.remove();
+                    this.updateUI();
+                });
+                updateRangeHighlight();
+                this.updateUI();
+            },
+
+            // Utfører alle finansielle beregninger for prognosen, tilpasset det nye diagrammet
+            calculatePrognosis: function() {
+                const labels = [];
+                // Data for diagrammet: hovedstol, avkastning, årlig sparing, utbetaling pensjonsgap
+                const data = { hovedstol: [], avkastning: [], sparing: [], utbetaling: [] };
+
+                let currentPortfolioValue = this.state.initialPortfolioSize;
+                let taxFreeCapitalRemaining = this.state.investedCapital;
+
+                const stockReturnRate = this.state.stockReturnRate / 100;
+                const bondReturnRate = this.state.bondReturnRate / 100;
+                const taxRate = this.state.taxRate / 100;
+                const desiredAnnualPayoutAfterTax = this.state.desiredAnnualPayoutAfterTax;
+                const annualSavings = this.state.annualSavings; // Bruker årlig sparing direkte
+
+                const totalSimulatedYears = this.state.investmentYears + this.state.payoutYears;
+
+                for (let i = 0; i < totalSimulatedYears; i++) {
+                    const year = this.START_YEAR + i;
+                    labels.push(year.toString()); // Årsnummer for etikett
+
+                    const startOfYearValue = currentPortfolioValue; // Dette er hovedstolen for året
+
+                    // Henter aksjeandel for det aktuelle året
+                    const annualStockPercentage = this.state.annualStockPercentages[i] / 100;
+                    const annualBondPercentage = 1 - annualStockPercentage;
+                    const effectiveReturnRate = (annualStockPercentage * stockReturnRate) + (annualBondPercentage * bondReturnRate);
+
+                    let currentAnnualEvents = 0;
+
+                    // Håndterer hendelser for dette året
+                    this.state.events.forEach(event => {
+                        if (year >= event.startAar && year <= event.sluttAar) {
+                            currentAnnualEvents += event.belop;
+                        }
+                    });
+
+                    // Separerer hendelser i sparing og uttak for beregning
+                    const eventContributions = Math.max(0, currentAnnualEvents);
+                    const eventWithdrawals = Math.min(0, currentAnnualEvents); // Negative for uttak
+
+                    const totalAnnualSparing = annualSavings + eventContributions; // Total sparing (positive sum)
+
+                    // Beregner avkastning basert på startverdi og nye innskudd/uttak gjennom året
+                    // Antar at sparing/uttak skjer midtveis i året for avkastningsberegning
+                    const averageValueForReturn = startOfYearValue + (totalAnnualSparing / 2) + (eventWithdrawals / 2);
+                    const grossReturn = averageValueForReturn * effectiveReturnRate;
+                    
+                    let grossPayoutNeededFromPortfolio = 0; // Det totale beløpet som MÅ UT av porteføljen (før skatt)
+                    let chartPayoutComponent = 0; // Den delen som vises som negativ stolpe i diagrammet
+
+                    if (i >= this.state.investmentYears) { // Kun utbetalinger i utbetalingsfasen
+                        if (taxFreeCapitalRemaining > 0) {
+                            const taxFreeAmountToWithdraw = Math.min(desiredAnnualPayoutAfterTax, taxFreeCapitalRemaining);
+                            taxFreeCapitalRemaining -= taxFreeAmountToWithdraw;
+
+                            if (taxFreeAmountToWithdraw >= desiredAnnualPayoutAfterTax) {
+                                grossPayoutNeededFromPortfolio = desiredAnnualPayoutAfterTax;
+                            } else {
+                                const remainingDesiredPayout = desiredAnnualPayoutAfterTax - taxFreeAmountToWithdraw;
+                                const beforeTaxAmountForRemaining = remainingDesiredPayout / (1 - taxRate);
+                                grossPayoutNeededFromPortfolio = taxFreeAmountToWithdraw + beforeTaxAmountForRemaining;
+                            }
+                        } else {
+                            grossPayoutNeededFromPortfolio = desiredAnnualPayoutAfterTax / (1 - taxRate);
+                        }
+                        chartPayoutComponent = -grossPayoutNeededFromPortfolio; // Negativ for diagrammet
+                    }
+
+                    // Oppdaterer den totale porteføljeverdien
+                    currentPortfolioValue = startOfYearValue + grossReturn + totalAnnualSparing + eventWithdrawals + chartPayoutComponent;
+
+                    // Sikrer at porteføljeverdien ikke går under null
+                    if (currentPortfolioValue < 0) {
+                        currentPortfolioValue = 0;
+                    }
+
+                    // Legger til data for diagrammet
+                    data.hovedstol.push(Math.round(startOfYearValue));
+                    data.avkastning.push(Math.round(grossReturn));
+                    data.sparing.push(Math.round(totalAnnualSparing)); // Positiv verdi for sparing
+                    data.utbetaling.push(Math.round(chartPayoutComponent)); // Negativ verdi for uttak
+                }
+                return { labels, data };
+            },
+
+            // Oppdaterer brukergrensesnittet og diagrammet
+            updateUI: function() {
+                if (!this.investmentChart) return;
+
+                this.populateAnnualStockPercentages(); 
+
+                const { labels, data } = this.calculatePrognosis();
+                this.investmentChart.data.labels = labels;
+
+                // Oppdaterer diagramdatasets for stablede stolper
+                this.investmentChart.data.datasets = [
+                    {
+                        label: 'Avkastning', 
+                        data: data.avkastning,
+                        backgroundColor: this.colors.avkastning,
+                        stack: 'portfolio',
+                    },
+                    {
+                        label: 'Årlig sparing', 
+                        data: data.sparing,
+                        backgroundColor: this.colors.sparing,
+                        stack: 'portfolio',
+                    },
+                    {
+                        label: 'Hovedstol', 
+                        data: data.hovedstol,
+                        backgroundColor: this.colors.hovedstol,
+                        stack: 'portfolio',
+                    },
+                    {
+                        label: 'Årlige utbetalinger', 
+                        data: data.utbetaling,
+                        backgroundColor: this.colors.utbetaling,
+                        stack: 'portfolio',
+                    }
+                ];
+                
+                this.investmentChart.update(); // Oppdaterer diagrammet
+
+                // Oppdaterer visningene for alle sliders (inkludert initial state)
+                this.elements.initialPortfolioSizeValue.textContent = this.formatDisplayValue('initialPortfolioSize', this.state.initialPortfolioSize);
+                this.elements.investedCapitalValue.textContent = this.formatDisplayValue('investedCapital', this.state.investedCapital);
+                this.elements.desiredAnnualPayoutAfterTaxValue.textContent = this.formatDisplayValue('desiredAnnualPayoutAfterTax', this.state.desiredAnnualPayoutAfterTax);
+                // initialStockAllocationValue is updated by speedometer logic now
+                this.elements.stockReturnRateValue.textContent = this.formatDisplayValue('stockReturnRate', this.state.stockReturnRate);
+                this.elements.bondReturnRateValue.textContent = this.formatDisplayValue('bondReturnRate', this.state.bondReturnRate);
+                this.elements.taxRateValue.textContent = this.formatDisplayValue('taxRate', this.state.taxRate);
+                this.elements.annualSavingsValue.textContent = this.formatDisplayValue('annualSavings', this.state.annualSavings);
+
+                this.elements.investmentYearsLabel.textContent = this.formatDisplayValue('investmentYears', this.state.investmentYears);
+                this.elements.payoutYearsLabel.textContent = this.formatDisplayValue('payoutYears', this.state.payoutYears);
+
+                // Update selected button state for stock allocation
+                this.elements.stockAllocationButtons.forEach(button => {
+                    if (parseInt(button.dataset.value, 10) === this.state.initialStockAllocation) {
+                        button.classList.add('selected');
+                    } else {
+                        button.classList.remove('selected');
+                    }
+                });
+            },
+
+            // Oppretter og viser legenden for diagrammet
+            createLegend: function() {
+                this.elements.legendContainer.innerHTML = '';
+                this.legendData.forEach(item => {
+                    const legendItem = document.createElement('div');
+                    legendItem.className = 'flex items-center';
+                    legendItem.innerHTML = `<div class="w-4 h-4 rounded-sm mr-2" style="background-color: ${item.color}"></div><span>${item.label}</span>`;
+                    this.elements.legendContainer.appendChild(legendItem);
+                });
+            },
+        };
+
+        // --- INITIALISERER APPLIKASJONEN ---
+        App.init();
+    });
+    </script>
+</body>
+</html>
