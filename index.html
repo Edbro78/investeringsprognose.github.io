@@ -14,7 +14,7 @@
     <style>
         /* Custom Font Definitions - Bruker må sørge for at disse er lastet inn/tilgjengelige */
         /* Eksempel på @font-face hvis fonter er selv-hostet.
-           Du må erstatte 'sti/til/' med den faktiske stien til fontfilene dine.
+            Du må erstatte 'sti/til/' med den faktiske stien til fontfilene dine.
         @font-face {
             font-family: 'Whitney Bold';
             src: url('sti/til/Whitney-Bold.woff2') format('woff2');
@@ -138,7 +138,7 @@
             h1 { font-size: 32pt; } /* Justert responsiv størrelse */
             h2 { font-size: 20pt; }
             p, h3 { font-size: 12pt; }
-            tcolor: var(--text-label);
+            color: var(--text-label);
         }
 
         /* Hovedbeholder for dashboardet */
@@ -494,31 +494,31 @@
 
         /* Style for when the radio button inside is checked */
         .tapering-option-box input[type="radio"]:checked {
-            border-color: var(--button-selected-bg); /* Highlight border for selected */
-            background-color: var(--button-selected-bg); /* Change background for selected */
+            border-color: var(--button-selected-bg);
+            background-color: var(--button-selected-bg);
             box-shadow: 0 0 8px var(--button-selected-bg);
         }
         /* Ensure text color for selected radio option */
         .tapering-option-box input[type="radio"]:checked + span.text-general,
         .tapering-option-box input[type="radio"]:checked + span.text-general + span.text-label-small {
-            color: var(--text-button-on-blue); /* Keep text color for selected state */
+            color: var(--text-button-on-blue);
         }
 
 
         .tapering-option-box .text-label-small {
-            font-size: 0.7rem; /* Smaller text for "per år" */
-            color: var(--text-label); /* Default color, will be overridden by checked parent */
+            font-size: 0.7rem;
+            color: var(--text-label);
         }
         .tapering-option-box .text-general {
-            font-family: 'Whitney Medium', sans-serif; /* Keep medium weight for clarity */
+            font-family: 'Whitney Medium', sans-serif;
             font-size: 1rem;
-            color: var(--text-general); /* Default color, will be overridden by checked parent */
+            color: var(--text-general);
         }
         /* Flexbox for radio options */
         .tapering-options-group {
             display: grid;
             grid-template-columns: repeat(2, 1fr); /* Two columns */
-            gap: 0.5rem; /* Gap between boxes */
+            gap: 0.5rem;
         }
 
         /* Redemption option box styles */
@@ -571,7 +571,7 @@
 
     </style>
 </head>
-<body class="antialiased">
+<body>
 
     <div class="dashboard-container">
         <main class="w-full card-bg flex flex-col flex-grow">
@@ -597,7 +597,7 @@
                     </div>
                     <div>
                         <label for="investedCapital">Innskutt kapital (skattefri) (NOK)</label>
-                         <div class="flex items-center gap-2">
+                           <div class="flex items-center gap-2">
                             <input type="range" id="investedCapital" min="0" max="50000000" step="100000" value="5000000" class="w-full mt-1">
                             <span class="value-display" id="investedCapitalValue"></span>
                         </div>
@@ -629,7 +629,6 @@
                     </button>
                 </div>
                 <div class="space-y-6">
-                    <!-- Moved Aksjeandel nedtrapping to Hendelser -->
                     <div class="radio-group-container space-y-2">
                         <label class="text-label" style="font-size: 1rem;">Aksjeandel nedtrapping</label>
                         <div class="tapering-options-group">
@@ -655,7 +654,6 @@
                             </label>
                         </div>
                     </div>
-                    <!-- Moved Innløse hele porteføljen siste år to Hendelser -->
                     <div class="radio-group-container space-y-2">
                         <label class="text-label" style="font-size: 1rem;">Innløse hele porteføljen siste år</label>
                         <div class="redemption-options-group">
@@ -671,7 +669,6 @@
                             </label>
                         </div>
                     </div>
-                    <!-- Moved Aksjeandel første år to Hendelser -->
                     <div>
                         <label>Aksjeandel første år (%)</label>
                         <div class="stock-allocation-button-group">
@@ -729,19 +726,19 @@
             // Applikasjonens tilstand, med standardverdier
             state: {
                 initialPortfolioSize: 10000000, 
-                investedCapital: 5000000,    
-                investmentYears: 10,         
-                payoutYears: 10,             
-                desiredAnnualPayoutAfterTax: 1000000, 
+                investedCapital: 5000000,   
+                investmentYears: 10,        
+                payoutYears: 10,            
+                desiredAnnualPayoutAfterTax: 1000000,
                 initialStockAllocation: 80,  
-                stockReturnRate: 8.0,        
-                bondReturnRate: 5.0,         
-                taxRate: 37.8,               
-                annualStockPercentages: [],  
-                annualSavings: 0,            
-                events: [],                  
-                taperingOption: 'none',      
-                redeemPortfolioOption: 'none' 
+                stockReturnRate: 8.0,       
+                bondReturnRate: 5.0,        
+                taxRate: 37.8,              
+                annualStockPercentages: [], 
+                annualSavings: 0,           
+                events: [],                 
+                taperingOption: 'none',     
+                redeemPortfolioOption: 'none'
             },
             
             // Fargepalett for diagrammet
@@ -750,7 +747,7 @@
                 avkastning: '#93C5FD', 
                 sparing: '#3B82F6', 
                 utbetaling_netto: '#9CA3AF', 
-                utbetaling_skatt: '#DC143C', 
+                utbetaling_skatt: '#CD5C5C', 
                 event_uttak: '#FF6347', 
                 event_innskudd: '#ADD8E6' 
             },
@@ -891,8 +888,11 @@
                                     label: (context) => {
                                         const label = context.dataset.label || '';
                                         let value = context.raw;
-                                        if (value < 0) value = Math.abs(value); 
-                                        return `${label}: ${value.toLocaleString('no-NO', { style: 'currency', currency: 'NOK', minimumFractionDigits: 0 })}`;
+                                        // Display negative values with a minus sign, positive without
+                                        const formattedValue = value < 0 ? 
+                                            `-${Math.abs(value).toLocaleString('no-NO', { style: 'currency', currency: 'NOK', minimumFractionDigits: 0 })}` :
+                                            value.toLocaleString('no-NO', { style: 'currency', currency: 'NOK', minimumFractionDigits: 0 });
+                                        return `${label}: ${formattedValue}`;
                                     }
                                 }
                             }
@@ -915,6 +915,14 @@
                 sliderInputs.forEach(input => {
                     input.addEventListener('input', this.handleSliderChange.bind(this));
                 });
+
+                // Apply initial validation for investedCapital based on initialPortfolioSize
+                this.elements.investedCapital.max = this.elements.initialPortfolioSize.value;
+                if (parseFloat(this.elements.investedCapital.value) > parseFloat(this.elements.initialPortfolioSize.value)) {
+                    this.elements.investedCapital.value = this.elements.initialPortfolioSize.value;
+                    this.state.investedCapital = parseFloat(this.elements.initialPortfolioSize.value);
+                }
+
 
                 this.elements.stockAllocationButtons.forEach(button => {
                     button.addEventListener('click', (e) => {
@@ -947,8 +955,27 @@
 
             handleSliderChange: function(event) {
                 const { id, value } = event.target;
-                const parsedValue = parseFloat(value);
+                let parsedValue = parseFloat(value);
                 this.state[id] = parsedValue;
+
+                // Specific logic for investedCapital in relation to initialPortfolioSize
+                if (id === 'initialPortfolioSize') {
+                    // When initialPortfolioSize changes, update max for investedCapital
+                    this.elements.investedCapital.max = parsedValue;
+                    // If current investedCapital exceeds new initialPortfolioSize, adjust it
+                    if (this.state.investedCapital > parsedValue) {
+                        this.state.investedCapital = parsedValue;
+                        this.elements.investedCapital.value = parsedValue;
+                    }
+                } else if (id === 'investedCapital') {
+                    // When investedCapital changes, ensure it doesn't exceed initialPortfolioSize
+                    const currentPortfolioSize = parseFloat(this.elements.initialPortfolioSize.value);
+                    if (parsedValue > currentPortfolioSize) {
+                        parsedValue = currentPortfolioSize;
+                        this.state.investedCapital = parsedValue;
+                        this.elements.investedCapital.value = parsedValue; // Update the slider's visual value
+                    }
+                }
 
                 if (this.elements[`${id}Label`]) { 
                     this.elements[`${id}Label`].textContent = this.formatDisplayValue(id, parsedValue);
@@ -1033,31 +1060,43 @@
                 this.elements.eventsContainer.appendChild(eventRow);
                 
                 const amountInput = eventRow.querySelector('input[data-key="belop"]');
-                amountInput.value = (newEvent.belop === -0 ? '-' : newEvent.belop).toLocaleString('nb-NO'); 
+                // Set initial value correctly, handling -0 for display when adding new event
+                amountInput.value = (newEvent.belop === -0 ? '-' : newEvent.belop).toLocaleString('nb-NO', { minimumFractionDigits: 0, maximumFractionDigits: 0 }); 
 
                 amountInput.addEventListener('input', (e) => { 
                     let rawValue = e.target.value.replace(/\s/g, '').replace(/,/g, '.');
                     let parsedValue;
                     
-                    if (rawValue === '-') { 
-                        parsedValue = -0; 
-                    } else if (rawValue === '') { 
-                        parsedValue = 0;
-                    }
-                    else {
+                    if (rawValue === '-' || rawValue === '') { 
+                        // If only '-' or empty, set internal value to 0 or -0 for calculations
+                        parsedValue = (rawValue === '-') ? -0 : 0; 
+                    } else {
                         parsedValue = parseFloat(rawValue);
                         if (isNaN(parsedValue)) {
-                            parsedValue = 0; 
+                            parsedValue = 0; // If not a valid number, treat as 0 for calculations
                         }
                     }
                     
                     newEvent.belop = parsedValue; 
-                    e.target.value = (parsedValue === -0 ? '-' : parsedValue).toLocaleString('nb-NO'); 
+                    // Do NOT modify e.target.value here. Let the user type freely.
+                    // The visual update will happen on blur or via full UI recalculation.
                     this.updateUI(); 
                 });
+
                 amountInput.addEventListener('blur', (e) => { 
-                    let value = parseFloat(e.target.value.replace(/\s/g, '').replace(/,/g, '.'));
-                    if (!isNaN(value)) { e.target.value = value.toLocaleString('nb-NO'); } else { e.target.value = '0'; }
+                    let rawValue = e.target.value.replace(/\s/g, '').replace(/,/g, '.');
+                    let value = parseFloat(rawValue);
+                    
+                    // If input is empty, just '-', or invalid, set value to 0 for consistency
+                    if (isNaN(value) || rawValue === '' || rawValue === '-') { 
+                        value = 0;
+                    }
+                    
+                    // Update the input field's display with formatted value
+                    e.target.value = value.toLocaleString('nb-NO', { minimumFractionDigits: 0, maximumFractionDigits: 0 });
+                    newEvent.belop = value; // Ensure the event object holds the final, clean numerical value
+                    
+                    this.updateUI(); 
                 });
 
 
@@ -1113,131 +1152,192 @@
                     avkastning: [], 
                     sparing: [], 
                     nettoUtbetaling: [], 
-                    skatt: [],           
-                    eventUttak: [],      
-                    eventInnskudd: []    
+                    skatt: [],            
+                    eventUttak: [],       
+                    eventInnskudd: []     
                 };
 
                 let currentPortfolioValue = this.state.initialPortfolioSize;
-                let taxFreeCapitalRemaining = this.state.investedCapital;
+                let taxFreeCapitalRemaining = this.state.investedCapital; 
+                // const initialPortfolioBasis = this.state.initialPortfolioSize; // Not used for new direct taxation rule for full redemption
 
                 const stockReturnRate = this.state.stockReturnRate / 100;
                 const bondReturnRate = this.state.bondReturnRate / 100;
                 const taxRate = this.state.taxRate / 100;
                 const desiredAnnualPayoutAfterTax = this.state.desiredAnnualPayoutAfterTax;
-                const annualSavings = this.state.annualSavings; 
+                const annualSavings = this.state.annualSavings;
 
                 let totalSimulatedYears = this.state.investmentYears + this.state.payoutYears;
                 const lastOrdinaryPayoutYearIndex = this.state.investmentYears + this.state.payoutYears - 1;
 
                 if (this.state.redeemPortfolioOption === 'redeem') {
-                    totalSimulatedYears += 1;
+                    totalSimulatedYears += 1; 
                 }
 
                 for (let i = 0; i < totalSimulatedYears; i++) {
                     const year = this.START_YEAR + i;
-                    labels.push(year.toString()); 
+                    labels.push(year.toString());
 
-                    const startOfYearValue = currentPortfolioValue; 
+                    let startOfYearPortfolioValue = currentPortfolioValue; 
 
-                    const annualStockPercentage = this.state.annualStockPercentages[i] / 100;
-                    const annualBondPercentage = 1 - annualStockPercentage;
-                    const effectiveReturnRate = (annualStockPercentage * stockReturnRate) + (annualBondPercentage * bondReturnRate);
+                    let annualNetWithdrawalAmountForChart = 0; 
+                    let annualTaxAmount = 0;           
+                    let annualEventGrossWithdrawalForChart = 0; 
+                    let annualEventContributionForChart = 0;    
 
-                    let currentAnnualEventAmount = 0; 
+                    console.group(`--- År ${year} ---`);
+                    console.log(`Porteføljeverdi ved start: ${this.formatCurrency(currentPortfolioValue)}`);
+                    console.log(`Skattefri kapital gjenstående ved start: ${this.formatCurrency(taxFreeCapitalRemaining)}`);
+
+
+                    // --- Trinn 1: Håndter årlig sparing og hendelsesinnskudd (Positive) ---
+                    let currentYearTotalInflow = annualSavings;
                     this.state.events.forEach(event => {
-                        if (year >= event.startAar && year <= event.sluttAar) {
-                            currentAnnualEventAmount += event.belop;
+                        if (year >= event.startAar && year <= event.sluttAar && event.belop > 0) {
+                            currentYearTotalInflow += event.belop;
+                            annualEventContributionForChart += event.belop;
                         }
                     });
 
-                    const eventContributions = Math.max(0, currentAnnualEventAmount);
-                    const eventWithdrawals = Math.min(0, currentAnnualEventAmount); 
+                    currentPortfolioValue += currentYearTotalInflow;
+                    taxFreeCapitalRemaining += currentYearTotalInflow;
+                    console.log(`+ Inflow (sparing + positive hendelser): ${this.formatCurrency(currentYearTotalInflow)}`);
+                    console.log(`Ny porteføljeverdi etter innskudd: ${this.formatCurrency(currentPortfolioValue)}`);
+                    console.log(`Ny skattefri kapital etter innskudd: ${this.formatCurrency(taxFreeCapitalRemaining)}`);
 
-                    const totalAnnualSparing = annualSavings + eventContributions; 
 
-                    const averageValueForReturn = startOfYearValue + (totalAnnualSparing / 2) + (eventWithdrawals / 2);
-                    const grossReturn = averageValueForReturn * effectiveReturnRate;
-                    
-                    let totalGrossAmountToWithdrawFromPortfolio = 0; 
-                    let currentYearNetPensionPayout = 0;
-                    let currentYearPensionTax = 0;
+                    // --- Trinn 2: Beregn investeringsavkastning ---
+                    const annualStockPercentage = this.state.annualStockPercentages[i] / 100;
+                    const annualBondPercentage = 1 - annualStockPercentage;
+                    const effectiveReturnRate = (annualStockPercentage * stockReturnRate) + (annualBondPercentage * bondReturnRate);
+                    const grossReturn = currentPortfolioValue * effectiveReturnRate;
+                    currentPortfolioValue += grossReturn;
+                    console.log(`+ Avkastning: ${this.formatCurrency(grossReturn)}`);
+                    console.log(`Porteføljeverdi etter avkastning: ${this.formatCurrency(currentPortfolioValue)}`);
 
-                    let fundsAvailableBeforeCurrentYearWithdrawal = startOfYearValue + grossReturn + totalAnnualSparing + eventWithdrawals;
 
-                    if (i >= this.state.investmentYears && i <= lastOrdinaryPayoutYearIndex) { 
-                        let desiredNet = this.state.desiredAnnualPayoutAfterTax;
-                        
-                        let actualWithdrawalFromPortfolio = 0; 
-                        let netAmountReceived = 0;
-                        let taxPaid = 0;
-
-                        if (fundsAvailableBeforeCurrentYearWithdrawal > 0) { 
-                            let amountFromTaxFreeDesired = Math.min(desiredNet, taxFreeCapitalRemaining);
-                            let remainingNetDesiredAfterTaxFree = desiredNet - amountFromTaxFreeDesired;
-
-                            let grossTaxablePortionDesired = 0;
-                            if (remainingNetDesiredAfterTaxFree > 0) {
-                                grossTaxablePortionDesired = remainingNetDesiredAfterTaxFree / (1 - taxRate);
-                            }
-                            
-                            let totalCalculatedGrossWithdrawalNeeded = amountFromTaxFreeDesired + grossTaxablePortionDesired;
-
-                            actualGrossWithdrawal = Math.min(totalCalculatedGrossWithdrawalNeeded, fundsAvailableBeforeCurrentYearWithdrawal);
-
-                            let actualAmountFromTaxFreeUsed = Math.min(actualGrossWithdrawal, taxFreeCapitalRemaining);
-                            let actualTaxablePortionWithdrawn = actualGrossWithdrawal - actualAmountFromTaxFreeUsed;
-
-                            taxPaid = actualTaxablePortionWithdrawn * taxRate;
-                            netAmountReceived = actualAmountFromTaxFreeUsed + (actualTaxablePortionWithdrawn - taxPaid);
-                            
-                            taxFreeCapitalRemaining = Math.max(0, taxFreeCapitalRemaining - actualAmountFromTaxFreeUsed);
-
-                            totalGrossAmountToWithdrawFromPortfolio = actualGrossWithdrawal; 
-
-                        } else {
-                            totalGrossAmountToWithdrawFromPortfolio = 0;
+                    // --- Trinn 3: Håndter hendelsesuttak (Negative) ---
+                    let currentYearEventWithdrawalsNegative = 0;
+                    this.state.events.forEach(event => {
+                        if (year >= event.startAar && year <= event.sluttAar && event.belop < 0) {
+                            currentYearEventWithdrawalsNegative += event.belop;
                         }
+                    });
 
-                        currentYearNetPensionPayout = netAmountReceived;
-                        currentYearPensionTax = taxPaid;
+                    if (currentYearEventWithdrawalsNegative < 0) {
+                        let amountToWithdraw = Math.abs(currentYearEventWithdrawalsNegative);
+                        annualEventGrossWithdrawalForChart += amountToWithdraw; 
 
-                    } else if (i === totalSimulatedYears - 1 && this.state.redeemPortfolioOption === 'redeem') { 
-                        let portfolioBeforeFinalRedemption = fundsAvailableBeforeCurrentYearWithdrawal;
+                        console.log(`- Hendelsesuttak (brutto): ${this.formatCurrency(amountToWithdraw)}`);
+
+                        // Først, tømme taxFreeCapitalRemaining
+                        let fromTaxFree = Math.min(amountToWithdraw, taxFreeCapitalRemaining);
+                        taxFreeCapitalRemaining -= fromTaxFree;
+                        currentPortfolioValue -= fromTaxFree; 
                         
-                        if (portfolioBeforeFinalRedemption > 0) {
-                            totalGrossAmountToWithdrawFromPortfolio = portfolioBeforeFinalRedemption; // Attempt to redeem all available
-                            
-                            // For final redemption, the entire remaining amount is taxable as per rule "skattegningen blir dette beløpet ganger 37,8%"
-                            currentYearPensionTax = totalGrossAmountToWithdrawFromPortfolio * taxRate; 
-                            currentYearNetPensionPayout = totalGrossAmountToWithdrawFromPortfolio - currentYearPensionTax;
-                            
-                            // Ensure tax and net payout are not negative after calculation
-                            currentYearNetPensionPayout = Math.max(0, currentYearNetPensionPayout);
-                            currentYearPensionTax = Math.min(totalGrossAmountToWithdrawFromPortfolio, currentYearPensionTax); // Tax cannot exceed gross withdrawal
+                        let remainingAmountToWithdraw = amountToWithdraw - fromTaxFree;
+                        
+                        // Hvis det er et gjenværende beløp å ta ut, er det skattepliktig fra porteføljen
+                        if (remainingAmountToWithdraw > 0 && currentPortfolioValue > 0) {
+                            let taxableAmount = Math.min(remainingAmountToWithdraw, currentPortfolioValue);
+                            let taxForEvent = taxableAmount * taxRate;
 
-                            // Tax-free capital remaining is not used for taxation calculation here but should be reset if it was consumed.
-                            // Given the explicit rule, we will consider it fully consumed if the portfolio is redeemed.
-                            taxFreeCapitalRemaining = 0;
+                            annualTaxAmount += taxForEvent; 
+                            currentPortfolioValue -= taxableAmount; 
 
-                        } else {
-                            totalGrossAmountToWithdrawFromPortfolio = 0;
-                            currentYearNetPensionPayout = 0;
-                            currentYearPensionTax = 0;
+                            console.log(`  -> Fra skattefri (hendelse): ${this.formatCurrency(fromTaxFree)}`);
+                            console.log(`  -> Skattepliktig uttak fra hendelse: ${this.formatCurrency(taxableAmount)}`);
+                            console.log(`  -> Skatt på hendelse: ${this.formatCurrency(taxForEvent)}`);
+                        } else if (remainingAmountToWithdraw > 0 && currentPortfolioValue <= 0) {
+                            console.log(`  -> Kunne ikke ta ut resterende beløp (${this.formatCurrency(remainingAmountToWithdraw)}) da porteføljen er tom.`);
                         }
+                        console.log(`  Gjenstående porteføljeverdi etter hendelsesuttak: ${this.formatCurrency(currentPortfolioValue)}`);
+                        console.log(`  Gjenstående skattefri kapital etter hendelsesuttak: ${this.formatCurrency(taxFreeCapitalRemaining)}`);
                     }
 
-                    currentPortfolioValue = fundsAvailableBeforeCurrentYearWithdrawal - totalGrossAmountToWithdrawFromPortfolio;
-                    currentPortfolioValue = Math.max(0, currentPortfolioValue);
+                    // --- Trinn 4: Håndter ønskede årlige utbetalinger ---
+                    const isRedemptionYear = (i === totalSimulatedYears - 1 && this.state.redeemPortfolioOption === 'redeem');
+                    const isOrdinaryPayoutYear = (i >= this.state.investmentYears && i <= lastOrdinaryPayoutYearIndex); 
+
+                    if (isOrdinaryPayoutYear && !isRedemptionYear) { 
+                        let desiredNet = desiredAnnualPayoutAfterTax;
+                        console.log(`- Ønsket årlig utbetaling (netto): ${this.formatCurrency(desiredNet)}`);
+                        
+                        // Først, tømme taxFreeCapitalRemaining for ønsket utbetaling
+                        let fromTaxFree = Math.min(desiredNet, taxFreeCapitalRemaining);
+                        taxFreeCapitalRemaining -= fromTaxFree;
+                        currentPortfolioValue -= fromTaxFree; 
+                        annualNetWithdrawalAmountForChart += fromTaxFree; 
+                        console.log(`  -> Fra skattefri (utbetaling): ${this.formatCurrency(fromTaxFree)}`);
+
+                        let remainingDesiredNet = desiredNet - fromTaxFree;
+
+                        // Hvis det er mer som trengs, er det skattepliktig
+                        if (remainingDesiredNet > 0 && currentPortfolioValue > 0) {
+                            let grossNeededFromTaxable = remainingDesiredNet / (1 - taxRate);
+                            let taxableAmount = Math.min(grossNeededFromTaxable, currentPortfolioValue); 
+                            
+                            let taxForPension = taxableAmount * taxRate;
+                            let netAfterTaxForPension = taxableAmount - taxForPension;
+
+                            annualTaxAmount += taxForPension;
+                            annualNetWithdrawalAmountForChart += netAfterTaxForPension; 
+                            currentPortfolioValue -= taxableAmount; 
+
+                            console.log(`  -> Skattepliktig uttak: ${this.formatCurrency(taxableAmount)}`);
+                            console.log(`  -> Skatt på utbetaling: ${this.formatCurrency(taxForPension)}`);
+                            console.log(`  -> Netto etter skatt: ${this.formatCurrency(netAfterTaxForPension)}`);
+                        } else if (remainingDesiredNet > 0 && currentPortfolioValue <= 0) {
+                            console.log(`  -> Kunne ikke ta ut resterende ønsket netto beløp (${this.formatCurrency(remainingDesiredNet)}) da porteføljen er tom.`);
+                        }
+                        console.log(`  Gjenstående porteføljeverdi etter årlig utbetaling: ${this.formatCurrency(currentPortfolioValue)}`);
+                        console.log(`  Gjenstående skattefri kapital etter årlig utbetaling: ${this.formatCurrency(taxFreeCapitalRemaining)}`);
+                    }
+
+                    // --- Trinn 5: Håndter full porteføljeinnløsning ---
+                    // Dette skjer KUN i det aller siste året av simuleringen (det ekstra året om lagt til)
+                    if (isRedemptionYear) { 
+                        console.log(`--- Innløsning av hele porteføljen dette året ---`);
+                        if (currentPortfolioValue > 0) {
+                            let finalRedemptionAmount = currentPortfolioValue; 
+                            
+                            // Skatt beregnes på HELE beløpet ved innløsning
+                            let finalRedemptionTax = finalRedemptionAmount * taxRate; 
+                            let finalRedemptionNet = finalRedemptionAmount - finalRedemptionTax; 
+
+                            annualTaxAmount += finalRedemptionTax; // Akkumuler skatt for dette året
+                            annualNetWithdrawalAmountForChart += finalRedemptionNet; // Akkumuler netto beløp for diagram
+                            currentPortfolioValue = 0; // Porteføljen blir null
+                            taxFreeCapitalRemaining = 0; // All skattefri kapital anses som forbrukt
+
+                            console.log(`  Beløp innløst (brutto): ${this.formatCurrency(finalRedemptionAmount)}`);
+                            console.log(`  Skatt ved innløsning (hele porteføljen): ${this.formatCurrency(finalRedemptionTax)}`);
+                            console.log(`  Netto ved innløsning: ${this.formatCurrency(finalRedemptionNet)}`);
+                        } else {
+                            console.log(`  Ingen porteføljeverdi igjen å innløse.`);
+                        }
+                    }
                     
-                    data.hovedstol.push(Math.round(startOfYearValue));
+                    // Forsikre at porteføljeverdi og skattefri kapital ikke går under null
+                    currentPortfolioValue = Math.max(0, currentPortfolioValue);
+                    taxFreeCapitalRemaining = Math.max(0, taxFreeCapitalRemaining);
+
+                    console.log(`Porteføljeverdi ved slutten av året: ${this.formatCurrency(currentPortfolioValue)}`);
+                    console.log(`Skattefri kapital gjenstående ved slutten av året: ${this.formatCurrency(taxFreeCapitalRemaining)}`);
+                    console.log(`Total netto uttak dette året (for diagram): ${this.formatCurrency(annualNetWithdrawalAmountForChart)}`);
+                    console.log(`Total skatt dette året: ${this.formatCurrency(annualTaxAmount)}`);
+
+                    // Legg til data for diagram (negativt for utgående strømmer)
+                    data.hovedstol.push(Math.round(startOfYearPortfolioValue));
                     data.avkastning.push(Math.round(grossReturn));
-                    data.sparing.push(Math.round(annualSavings)); 
-                    data.eventInnskudd.push(Math.round(eventContributions)); 
-                    data.nettoUtbetaling.push(Math.round(-currentYearNetPensionPayout)); 
-                    data.skatt.push(Math.round(-currentYearPensionTax)); 
-                    data.eventUttak.push(Math.round(eventWithdrawals)); 
+                    data.sparing.push(Math.round(annualSavings)); // Årlig sparing (base, før hendelsesinnskudd)
+                    data.eventInnskudd.push(Math.round(annualEventContributionForChart)); // Positive hendelsesinnskudd
+                    data.nettoUtbetaling.push(Math.round(-annualNetWithdrawalAmountForChart)); // All netto penger mottatt av bruker (negativt for diagram)
+                    data.skatt.push(Math.round(-annualTaxAmount)); // All skatt betalt (negativt for diagram)
+                    data.eventUttak.push(Math.round(-annualEventGrossWithdrawalForChart)); // Totalt brutto uttak for negative hendelser for diagram (negativt for diagram)
+                    console.groupEnd();
                 }
+
                 return { labels, data };
             },
 
