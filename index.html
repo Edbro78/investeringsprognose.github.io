@@ -280,7 +280,8 @@
             gap: 0.5rem;
         }
         .add-event-button:hover {
-            background-color: var(--button-hover-bg); /* Darker blue on hover */
+            background-color: var(--button-hover-bg);
+            transform: translateY(-2px);
         }
         /* Styling for remove event button */
         .remove-event-button {
@@ -344,12 +345,12 @@
         .event-range-track {
             position: absolute;
             top: 5px; /* Match slider top position */
-            transform: translateY(0); /* Remove transform as top is absolute */
+            transform: translateY(0); /* Remove transform */
             width: 100%;
             height: 4px;
             background-color: var(--slider-track-color);
             border-radius: 2px;
-            pointer-events: none; /* Make track non-interactive, only thumbs */
+            pointer-events: none;
         }
         .event-range-highlight {
             position: absolute;
@@ -503,8 +504,6 @@
         .tapering-option-box input[type="radio"]:checked + span.text-general + span.text-label-small {
             color: var(--text-button-on-blue);
         }
-
-
         .tapering-option-box .text-label-small {
             font-size: 0.7rem;
             color: var(--text-label);
@@ -576,13 +575,21 @@
     <div class="dashboard-container">
         <main class="w-full card-bg flex flex-col flex-grow">
             <div class="flex justify-between items-center mb-4">
-                <h1 style="color: var(--text-heading); font-size: 40pt;" class="text-center w-full">Investeringsprognose</h1>
+                <h1 style="color: var(--text-heading); font-size: 28pt;" class="text-center w-full">Investeringsprognose</h1>
             </div>
 
             <div class="flex-grow relative" style="height: 400px;"> <canvas id="investmentChart"></canvas>
             </div>
             <div id="legend-container" class="flex justify-center flex-wrap gap-x-6 gap-y-2 mt-4" style="color: var(--text-general);"></div>
         </main>
+
+        <!-- Ny seksjon for Aksjeandel over tid -->
+        <section class="w-full card-bg flex flex-col mt-4" style="height: 250px;">
+            <div class="flex justify-between items-center mb-4">
+                <h2 style="font-size: 20pt; color: var(--text-heading);">Aksjeandel over tid</h2>
+            </div>
+            <div class="flex-grow relative"> <canvas id="allocationChart"></canvas></div>
+        </section>
 
         <div class="w-full grid-container">
             <aside class="w-full card-bg">
@@ -654,21 +661,7 @@
                             </label>
                         </div>
                     </div>
-                    <div class="radio-group-container space-y-2">
-                        <label class="text-label" style="font-size: 1rem;">Innløse hele porteføljen siste år</label>
-                        <div class="redemption-options-group">
-                            <label for="redeem-none" class="redemption-option-box">
-                                <input type="radio" id="redeem-none" name="redeemOption" value="none" checked class="hidden">
-                                <span class="text-general">Ikke innløse</span>
-                                <span class="text-label-small">(Standard)</span>
-                            </label>
-                            <label for="redeem-full" class="redemption-option-box">
-                                <input type="radio" id="redeem-full" name="redeemOption" value="redeem" class="hidden">
-                                <span class="text-general">Innløse</span>
-                                <span class="text-label-small">hele porteføljen</span>
-                            </label>
-                        </div>
-                    </div>
+                    <!-- Fjernet: Innløse hele porteføljen siste år -->
                     <div>
                         <label>Aksjeandel første år (%)</label>
                         <div class="stock-allocation-button-group">
@@ -738,7 +731,7 @@
                 annualSavings: 0,           
                 events: [],                 
                 taperingOption: 'none',     
-                redeemPortfolioOption: 'none'
+                redeemPortfolioOption: 'none' 
             },
             
             // Fargepalett for diagrammet
@@ -749,7 +742,10 @@
                 utbetaling_netto: '#9CA3AF', 
                 utbetaling_skatt: '#CD5C5C', 
                 event_uttak: '#FF6347', 
-                event_innskudd: '#ADD8E6' 
+                event_innskudd: '#ADD8E6',
+                // Nye farger for arealdiagram
+                aksjeandel: '#81C784', 
+                renteandel: '#64B5F6'  
             },
             
             // Data for diagramlegenden
@@ -768,6 +764,7 @@
             
             // Chart.js instans
             investmentChart: null,
+            allocationChart: null, 
 
             // Funksjon for å formatere verdier som vises ved siden av slidere
             formatDisplayValue: function(id, value) {
@@ -820,13 +817,11 @@
                     
                     taperingOptionRadios: document.querySelectorAll('input[name="taperingOption"]'), 
                     stockAllocationButtons: document.querySelectorAll('.stock-allocation-button'), 
-                    
-                    redeemOptionRadios: document.querySelectorAll('input[name="redeemOption"]') 
                 };
 
-                // Setter opp Chart.js diagrammet
-                const ctx = document.getElementById('investmentChart').getContext('2d');
-                this.investmentChart = new Chart(ctx, {
+                // Setter opp Chart.js diagrammet (Hovedprognose)
+                const ctxInvestment = document.getElementById('investmentChart').getContext('2d');
+                this.investmentChart = new Chart(ctxInvestment, {
                     type: 'bar', 
                     data: {
                         labels: [],
@@ -888,7 +883,6 @@
                                     label: (context) => {
                                         const label = context.dataset.label || '';
                                         let value = context.raw;
-                                        // Display negative values with a minus sign, positive without
                                         const formattedValue = value < 0 ? 
                                             `-${Math.abs(value).toLocaleString('no-NO', { style: 'currency', currency: 'NOK', minimumFractionDigits: 0 })}` :
                                             value.toLocaleString('no-NO', { style: 'currency', currency: 'NOK', minimumFractionDigits: 0 });
@@ -904,6 +898,90 @@
                     }
                 });
                 
+                // Setter opp Chart.js diagrammet (Arealdiagram for fordeling)
+                const ctxAllocation = document.getElementById('allocationChart').getContext('2d');
+                this.allocationChart = new Chart(ctxAllocation, {
+                    type: 'line', // For arealdiagram
+                    data: {
+                        labels: [],
+                        datasets: []
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Aksjeandel over tid', // Endret tittel her
+                                color: '#FFFFFF',
+                                font: {
+                                    size: 16,
+                                    family: 'Whitney Bold, sans-serif'
+                                }
+                            },
+                            legend: {
+                                display: true, // Vis legende for dette diagrammet
+                                labels: {
+                                    color: '#FFFFFF',
+                                    font: {
+                                        size: 14,
+                                        family: 'Whitney Light, sans-serif'
+                                    }
+                                }
+                            },
+                            tooltip: {
+                                mode: 'index',
+                                intersect: false,
+                                callbacks: {
+                                    title: (tooltipItems) => `År ${tooltipItems[0].label}`,
+                                    label: (context) => {
+                                        const label = context.dataset.label || '';
+                                        const value = context.raw;
+                                        return `${label}: ${value.toFixed(1)}%`;
+                                    }
+                                }
+                            }
+                        },
+                        scales: {
+                            x: {
+                                stacked: true, // Viktig for arealdiagram (100% stablet)
+                                grid: { display: false },
+                                ticks: {
+                                    color: '#FFFFFF',
+                                    font: {
+                                        size: 12,
+                                        family: 'Whitney Light, sans-serif'
+                                    }
+                                }
+                            },
+                            y: {
+                                stacked: true, // Viktig for arealdiagram (100% stablet)
+                                beginAtZero: true,
+                                max: 100, // Prosent
+                                grid: { color: 'rgba(255, 255, 255, 0.1)' },
+                                ticks: {
+                                    color: '#FFFFFF',
+                                    font: {
+                                        size: 12,
+                                        family: 'Whitney Light, sans-serif'
+                                    },
+                                    callback: (value) => `${value}%`
+                                }
+                            }
+                        },
+                        interaction: {
+                            mode: 'index',
+                            intersect: false
+                        },
+                        elements: {
+                            line: {
+                                tension: 0.4 // Smooth linjer for arealdiagram
+                            }
+                        }
+                    }
+                });
+
+
                 const sliderInputs = [
                     this.elements.initialPortfolioSize, this.elements.investedCapital, 
                     this.elements.investmentYears, this.elements.payoutYears, 
@@ -935,13 +1013,6 @@
                 this.elements.taperingOptionRadios.forEach(radio => {
                     radio.addEventListener('change', (e) => {
                         this.state.taperingOption = e.target.value;
-                        this.updateUI(); 
-                    });
-                });
-
-                this.elements.redeemOptionRadios.forEach(radio => {
-                    radio.addEventListener('change', (e) => {
-                        this.state.redeemPortfolioOption = e.target.value;
                         this.updateUI(); 
                     });
                 });
@@ -990,6 +1061,8 @@
             formatNumber: (value) => new Intl.NumberFormat('nb-NO').format(value),
             
             populateAnnualStockPercentages: function() {
+                // The total simulated years should only be based on investmentYears and payoutYears
+                // since the "redeemPortfolioOption" feature has been removed.
                 const totalSimulatedYears = this.state.investmentYears + this.state.payoutYears;
                 this.state.annualStockPercentages = [];
 
@@ -1026,7 +1099,8 @@
 
             addEvent: function() {
                 const eventId = `event-${Date.now()}`;
-                const totalSimulatedYears = this.state.investmentYears + this.state.payoutYears + (this.state.redeemPortfolioOption === 'redeem' ? 1 : 0);
+                // totalSimulatedYears adjusted as redeemPortfolioOption is removed.
+                const totalSimulatedYears = this.state.investmentYears + this.state.payoutYears;
                 const maxYear = this.START_YEAR + totalSimulatedYears - 1;
                 const defaultStartYear = Math.min(maxYear, this.START_YEAR + 5);
                 const newEvent = { id: eventId, type: 'Uttak', belop: -100000, startAar: defaultStartYear, sluttAar: defaultStartYear };
@@ -1154,12 +1228,13 @@
                     nettoUtbetaling: [], 
                     skatt: [],            
                     eventUttak: [],       
-                    eventInnskudd: []     
+                    eventInnskudd: [],
+                    annualStockPercentages: [], 
+                    annualBondPercentages: []   
                 };
 
                 let currentPortfolioValue = this.state.initialPortfolioSize;
                 let taxFreeCapitalRemaining = this.state.investedCapital; 
-                // const initialPortfolioBasis = this.state.initialPortfolioSize; // Not used for new direct taxation rule for full redemption
 
                 const stockReturnRate = this.state.stockReturnRate / 100;
                 const bondReturnRate = this.state.bondReturnRate / 100;
@@ -1168,11 +1243,7 @@
                 const annualSavings = this.state.annualSavings;
 
                 let totalSimulatedYears = this.state.investmentYears + this.state.payoutYears;
-                const lastOrdinaryPayoutYearIndex = this.state.investmentYears + this.state.payoutYears - 1;
-
-                if (this.state.redeemPortfolioOption === 'redeem') {
-                    totalSimulatedYears += 1; 
-                }
+                const lastOrdinaryPayoutYearIndex = this.state.investmentYears + this.state.payoutYears - 1; 
 
                 for (let i = 0; i < totalSimulatedYears; i++) {
                     const year = this.START_YEAR + i;
@@ -1207,9 +1278,9 @@
 
 
                     // --- Trinn 2: Beregn investeringsavkastning ---
-                    const annualStockPercentage = this.state.annualStockPercentages[i] / 100;
-                    const annualBondPercentage = 1 - annualStockPercentage;
-                    const effectiveReturnRate = (annualStockPercentage * stockReturnRate) + (annualBondPercentage * bondReturnRate);
+                    const annualStockPercentage = this.state.annualStockPercentages[i]; 
+                    const annualBondPercentage = 100 - annualStockPercentage; 
+                    const effectiveReturnRate = ((annualStockPercentage / 100) * stockReturnRate) + ((annualBondPercentage / 100) * bondReturnRate);
                     const grossReturn = currentPortfolioValue * effectiveReturnRate;
                     currentPortfolioValue += grossReturn;
                     console.log(`+ Avkastning: ${this.formatCurrency(grossReturn)}`);
@@ -1256,10 +1327,9 @@
                     }
 
                     // --- Trinn 4: Håndter ønskede årlige utbetalinger ---
-                    const isRedemptionYear = (i === totalSimulatedYears - 1 && this.state.redeemPortfolioOption === 'redeem');
                     const isOrdinaryPayoutYear = (i >= this.state.investmentYears && i <= lastOrdinaryPayoutYearIndex); 
 
-                    if (isOrdinaryPayoutYear && !isRedemptionYear) { 
+                    if (isOrdinaryPayoutYear) { 
                         let desiredNet = desiredAnnualPayoutAfterTax;
                         console.log(`- Ønsket årlig utbetaling (netto): ${this.formatCurrency(desiredNet)}`);
                         
@@ -1293,30 +1363,6 @@
                         console.log(`  Gjenstående porteføljeverdi etter årlig utbetaling: ${this.formatCurrency(currentPortfolioValue)}`);
                         console.log(`  Gjenstående skattefri kapital etter årlig utbetaling: ${this.formatCurrency(taxFreeCapitalRemaining)}`);
                     }
-
-                    // --- Trinn 5: Håndter full porteføljeinnløsning ---
-                    // Dette skjer KUN i det aller siste året av simuleringen (det ekstra året om lagt til)
-                    if (isRedemptionYear) { 
-                        console.log(`--- Innløsning av hele porteføljen dette året ---`);
-                        if (currentPortfolioValue > 0) {
-                            let finalRedemptionAmount = currentPortfolioValue; 
-                            
-                            // Skatt beregnes på HELE beløpet ved innløsning
-                            let finalRedemptionTax = finalRedemptionAmount * taxRate; 
-                            let finalRedemptionNet = finalRedemptionAmount - finalRedemptionTax; 
-
-                            annualTaxAmount += finalRedemptionTax; // Akkumuler skatt for dette året
-                            annualNetWithdrawalAmountForChart += finalRedemptionNet; // Akkumuler netto beløp for diagram
-                            currentPortfolioValue = 0; // Porteføljen blir null
-                            taxFreeCapitalRemaining = 0; // All skattefri kapital anses som forbrukt
-
-                            console.log(`  Beløp innløst (brutto): ${this.formatCurrency(finalRedemptionAmount)}`);
-                            console.log(`  Skatt ved innløsning (hele porteføljen): ${this.formatCurrency(finalRedemptionTax)}`);
-                            console.log(`  Netto ved innløsning: ${this.formatCurrency(finalRedemptionNet)}`);
-                        } else {
-                            console.log(`  Ingen porteføljeverdi igjen å innløse.`);
-                        }
-                    }
                     
                     // Forsikre at porteføljeverdi og skattefri kapital ikke går under null
                     currentPortfolioValue = Math.max(0, currentPortfolioValue);
@@ -1330,11 +1376,15 @@
                     // Legg til data for diagram (negativt for utgående strømmer)
                     data.hovedstol.push(Math.round(startOfYearPortfolioValue));
                     data.avkastning.push(Math.round(grossReturn));
-                    data.sparing.push(Math.round(annualSavings)); // Årlig sparing (base, før hendelsesinnskudd)
-                    data.eventInnskudd.push(Math.round(annualEventContributionForChart)); // Positive hendelsesinnskudd
-                    data.nettoUtbetaling.push(Math.round(-annualNetWithdrawalAmountForChart)); // All netto penger mottatt av bruker (negativt for diagram)
-                    data.skatt.push(Math.round(-annualTaxAmount)); // All skatt betalt (negativt for diagram)
-                    data.eventUttak.push(Math.round(-annualEventGrossWithdrawalForChart)); // Totalt brutto uttak for negative hendelser for diagram (negativt for diagram)
+                    data.sparing.push(Math.round(annualSavings)); 
+                    data.eventInnskudd.push(Math.round(annualEventContributionForChart)); 
+                    data.nettoUtbetaling.push(Math.round(-annualNetWithdrawalAmountForChart)); 
+                    data.skatt.push(Math.round(-annualTaxAmount)); 
+                    data.eventUttak.push(Math.round(-annualEventGrossWithdrawalForChart)); 
+                    
+                    // Push data for det nye arealdiagrammet
+                    data.annualStockPercentages.push(Math.round(annualStockPercentage));
+                    data.annualBondPercentages.push(Math.round(annualBondPercentage));
                     console.groupEnd();
                 }
 
@@ -1342,12 +1392,13 @@
             },
 
             updateUI: function() {
-                if (!this.investmentChart) return;
+                if (!this.investmentChart || !this.allocationChart) return;
 
                 this.populateAnnualStockPercentages(); 
 
                 const { labels, data } = this.calculatePrognosis();
                 this.investmentChart.data.labels = labels;
+                this.allocationChart.data.labels = labels; 
 
                 this.investmentChart.data.datasets = [
                     {
@@ -1394,7 +1445,29 @@
                     }
                 ];
                 
+                this.allocationChart.data.datasets = [
+                    {
+                        label: 'Aksjeandel',
+                        data: data.annualStockPercentages,
+                        backgroundColor: this.colors.aksjeandel,
+                        borderColor: this.colors.aksjeandel,
+                        fill: true,
+                        stack: 'allocation', 
+                        tension: 0.4
+                    },
+                    {
+                        label: 'Renteandel',
+                        data: data.annualBondPercentages,
+                        backgroundColor: this.colors.renteandel,
+                        borderColor: this.colors.renteandel,
+                        fill: true,
+                        stack: 'allocation', 
+                        tension: 0.4
+                    }
+                ];
+
                 this.investmentChart.update(); 
+                this.allocationChart.update(); 
 
                 this.elements.initialPortfolioSizeValue.textContent = this.formatDisplayValue('initialPortfolioSize', this.state.initialPortfolioSize);
                 this.elements.investedCapitalValue.textContent = this.formatDisplayValue('investedCapital', this.state.investedCapital);
